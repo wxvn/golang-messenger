@@ -3,7 +3,7 @@ package jwt
 import (
 	"time"
 
-	"github.com/golang-jwt/jwt/v5" // Используй актуальную версию: go get github.com/golang-jwt/jwt/v5
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type TokenManager struct {
