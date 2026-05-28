@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/wxvn/golang-messenger/internal/jwt"
+	"github.com/wxvn/golang-messenger/internal/security"
 )
 
 type Service struct {
@@ -18,7 +19,7 @@ func NewService(repo *Repository, tm *jwt.TokenManager) *Service {
 }
 
 func (s *Service) SignUp(ctx context.Context, username, password string) (SignResponse, error) {
-	hashPassword, _ := HashPassword(password)
+	hashPassword, _ := security.HashPassword(password)
 
 	user := User{Username: username, PasswordHash: string(hashPassword)}
 
@@ -29,7 +30,7 @@ func (s *Service) SignUp(ctx context.Context, username, password string) (SignRe
 		return SignResponse{}, err
 	}
 
-	accessToken, err := s.tokenManager.GenerateAccessToken(createdUser.ID.String())
+	accessToken, err := s.tokenManager.GenerateAccessToken(createdUser.ID)
 	if err != nil {
 		return SignResponse{}, err
 	}
@@ -49,11 +50,11 @@ func (s *Service) SignIn(ctx context.Context, username, password string) (Tokens
 		return Tokens{}, fmt.Errorf("get user from repository: %w", err)
 	}
 
-	if err := CheckPassword(user.PasswordHash, password); err != nil {
+	if err := security.CheckPassword(user.PasswordHash, password); err != nil {
 		return Tokens{}, fmt.Errorf("get user from repository: %w", err)
 	}
 
-	accessToken, err := s.tokenManager.GenerateAccessToken(user.ID.String())
+	accessToken, err := s.tokenManager.GenerateAccessToken(user.ID)
 	if err != nil {
 		return Tokens{}, err
 	}
@@ -93,7 +94,7 @@ func (s *Service) Refresh(ctx context.Context, tokens Tokens) (Tokens, error) {
 		return Tokens{}, fmt.Errorf("token is revoked")
 	}
 
-	accesToken, err := s.tokenManager.GenerateAccessToken(refreshToken.UserID.String())
+	accesToken, err := s.tokenManager.GenerateAccessToken(refreshToken.UserID)
 	if err != nil {
 		return Tokens{}, err
 	}

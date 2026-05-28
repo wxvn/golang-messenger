@@ -22,7 +22,7 @@ type Handler struct {
 	service *Service
 }
 
-func NewDelivery(svc *Service) *Handler {
+func NewAuthHandler(svc *Service) *Handler {
 	return &Handler{service: svc}
 }
 

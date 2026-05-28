@@ -7,11 +7,12 @@ import (
 )
 
 type User struct {
-	ID           uuid.UUID `json:"id"`
-	Version      int64     `json:"version"`
-	Username     string    `json:"username"`
-	PasswordHash string    `json:"-"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID           uuid.UUID  `json:"id"`
+	Version      int64      `json:"version"`
+	Username     string     `json:"username"`
+	PasswordHash string     `json:"-"`
+	CreatedAt    time.Time  `json:"created_at"`
+	DeletedAt    *time.Time `json:"deleted_at"`
 }
 
 type Tokens struct {

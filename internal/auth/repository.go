@@ -2,10 +2,13 @@ package auth
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	errs "github.com/wxvn/golang-messenger/internal/errors"
 	"github.com/wxvn/golang-messenger/internal/postgres"
 )
 
@@ -54,7 +57,7 @@ func (r *Repository) GetUserByUsername(ctx context.Context, username string) (Us
 	defer canel()
 
 	query := `
-	SELECT id, version, username, password_hash, created_at
+	SELECT id, version, username, password_hash, created_at, deleted_at
 	FROM messenger.users
 	WHERE username=$1;
 	`
@@ -62,9 +65,12 @@ func (r *Repository) GetUserByUsername(ctx context.Context, username string) (Us
 	row := r.pool.QueryRow(ctx, query, username)
 
 	var user User
-	err := row.Scan(&user.ID, &user.Version, &user.Username, &user.PasswordHash, &user.CreatedAt)
+	err := row.Scan(&user.ID, &user.Version, &user.Username, &user.PasswordHash, &user.CreatedAt, &user.DeletedAt)
 	if err != nil {
-		return User{}, fmt.Errorf("scan error: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return User{}, errs.ErrNotFound
+		}
+		return User{}, fmt.Errorf("scan user: %w", err)
 	}
 
 	return user, nil
@@ -107,11 +113,11 @@ func (r *Repository) RevokeToken(ctx context.Context, tokenHash string, revokedA
 	)
 
 	if err != nil {
-		return fmt.Errorf("Exec error: %w", err)
+		return fmt.Errorf("exec error: %w", err)
 	}
 
 	if cmdTag.RowsAffected() == 0 {
-		return fmt.Errorf("token not found or already revoked")
+		return errs.ErrConflict
 	}
 
 	return nil
@@ -131,6 +137,9 @@ func (r *Repository) GetTokenByHash(ctx context.Context, tokenHash string) (Refr
 	var token RefreshToken
 	err := row.Scan(&token.ID, &token.Version, &token.UserID, &token.TokenHash, &token.CreatedAt, &token.ExpiresAt, &token.RevokedAt)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return RefreshToken{}, errs.ErrNotFound
+		}
 		return RefreshToken{}, fmt.Errorf("scan error: %w", err)
 	}
 

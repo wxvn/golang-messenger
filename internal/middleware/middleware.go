@@ -16,7 +16,10 @@ const RequestIDHeader = "X-Request-ID"
 
 type contextKey string
 
-const requestIDKey contextKey = "request_id"
+const (
+	requestIDKey contextKey = "request_id"
+	userIDKey    contextKey = "user_id"
+)
 
 func RequestID() server.Middleware {
 	return func(next http.Handler) http.Handler {

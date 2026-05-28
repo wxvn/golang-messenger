@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/wxvn/golang-messenger/internal/auth"
 	"github.com/wxvn/golang-messenger/internal/config"
@@ -14,6 +15,7 @@ import (
 	"github.com/wxvn/golang-messenger/internal/middleware"
 	"github.com/wxvn/golang-messenger/internal/postgres"
 	"github.com/wxvn/golang-messenger/internal/server"
+	"github.com/wxvn/golang-messenger/internal/users"
 )
 
 func main() {
@@ -40,11 +42,15 @@ func main() {
 	}
 	defer pool.Close()
 
-	tokenManager := jwt.NewTokenManager(cfg.JWTSecret)
+	tokenManager := jwt.NewTokenManager(cfg.JWTSecret, time.Minute*15)
 
 	authRepo := auth.NewRepository(pool)
 	authService := auth.NewService(authRepo, tokenManager)
-	authDelivery := auth.NewDelivery(authService)
+	authDelivery := auth.NewAuthHandler(authService)
+
+	usersRepo := users.NewUserRepositoy(pool)
+	usersService := users.NewUserService(usersRepo)
+	usersHandler := users.NewUsersHandler(usersService)
 
 	httpServer := server.New(
 		cfg.Addr,
@@ -55,8 +61,17 @@ func main() {
 		middleware.Trace(),
 		middleware.Panic(),
 	)
+	authMW := middleware.Auth(tokenManager)
 
-	httpServer.RegisterVersion("v1", authDelivery.Routes())
+	httpServer.RegisterVersion("v1",
+		server.RouteGroup{
+			Routes: authDelivery.Routes(),
+		},
+		server.RouteGroup{
+			Middlewares: []server.Middleware{authMW},
+			Routes:      usersHandler.Routes(),
+		},
+	)
 
 	if err := httpServer.Run(ctx); err != nil {
 		slog.Error("http server error", "error", err)
