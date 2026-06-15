@@ -41,29 +41,23 @@ func New(addr string, timeout time.Duration, mws ...Middleware) *HTTPServer {
 
 func (s *HTTPServer) RegisterVersion(version string, groups ...RouteGroup) {
 	prefix := "/api/" + version
-	versionMux := http.NewServeMux()
 
 	for _, group := range groups {
 		for _, r := range group.Routes {
-
-			pattern := fmt.Sprintf("%s %s", r.Method, r.Path)
+			pattern := fmt.Sprintf("%s %s%s", r.Method, prefix, r.Path)
 			handler := http.Handler(r.Handler)
 
-			// route middleware
 			for i := len(r.Middlewares) - 1; i >= 0; i-- {
 				handler = r.Middlewares[i](handler)
 			}
 
-			// group middleware
 			for i := len(group.Middlewares) - 1; i >= 0; i-- {
 				handler = group.Middlewares[i](handler)
 			}
 
-			versionMux.Handle(pattern, handler)
+			s.mux.Handle(pattern, handler)
 		}
 	}
-
-	s.mux.Handle(prefix+"/", http.StripPrefix(prefix, versionMux))
 }
 
 func (s *HTTPServer) Run(ctx context.Context) error {

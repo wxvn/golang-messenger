@@ -110,5 +110,4 @@ func (s *Service) Refresh(ctx context.Context, tokens Tokens) (Tokens, error) {
 		AccessToken:  accesToken,
 		RefreshToken: tokenRaw,
 	}, nil
-
 }

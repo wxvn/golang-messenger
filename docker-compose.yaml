@@ -3,19 +3,43 @@ services:
         container_name: messenger-postgres
         image: postgres:18-bookworm
         restart: unless-stopped
-
         user: "1000:1000"
-
         ports:
             - "5432:5432"
-
         environment:
             POSTGRES_USER: user
             POSTGRES_PASSWORD: password
             POSTGRES_DB: test
-
         volumes:
             - messenger-postgres-data:/var/lib/postgresql
+
+    migrate:
+        image: migrate/migrate
+        depends_on:
+            - postgres
+        volumes:
+            - ./migrations:/migrations
+        command:
+            [
+                "-path",
+                "/migrations",
+                "-database",
+                "postgres://user:password@postgres:5432/test?sslmode=disable",
+                "up",
+            ]
+
+    messenger:
+        container_name: messenger-api
+        build: .
+        restart: unless-stopped
+        depends_on:
+            - postgres
+        env_file:
+            - .env
+        ports:
+            - "8080:8080"
+        volumes:
+            - ./logs:/app/logs
 
 volumes:
     messenger-postgres-data:

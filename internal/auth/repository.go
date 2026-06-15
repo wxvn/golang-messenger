@@ -21,6 +21,9 @@ func NewRepository(pool *postgres.Pool) *Repository {
 }
 
 func (r *Repository) SignUp(ctx context.Context, u User, tokenHash string, expiresAt time.Time) (User, error) {
+	ctx, cancel := context.WithTimeout(ctx, r.pool.OpTimeout())
+	defer cancel()
+
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return User{}, fmt.Errorf("begin tx: %w", err)
@@ -30,7 +33,8 @@ func (r *Repository) SignUp(ctx context.Context, u User, tokenHash string, expir
 	userQuery := `
 		INSERT INTO messenger.users (username, password_hash)
 		VALUES ($1, $2)
-		RETURNING id, version, username, created_at`
+		RETURNING id, version, username, created_at;
+`
 
 	var createdUser User
 	err = tx.QueryRow(ctx, userQuery, u.Username, u.PasswordHash).Scan(

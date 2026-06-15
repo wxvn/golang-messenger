@@ -20,7 +20,7 @@ type Tokens struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-type SignUpRequest struct {
+type SignRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
@@ -40,4 +40,8 @@ type RefreshToken struct {
 	CreatedAt time.Time
 	ExpiresAt time.Time
 	RevokedAt *time.Time
+}
+
+type requestRefreshToken struct {
+	RefreshToken string `json:"refresh_token"`
 }
