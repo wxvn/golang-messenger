@@ -11,15 +11,15 @@ import (
 	"github.com/wxvn/golang-messenger/internal/postgres"
 )
 
-type UserRepositoy struct {
+type UserRepository struct {
 	pool *postgres.Pool
 }
 
-func NewUserRepositoy(pool *postgres.Pool) *UserRepositoy {
-	return &UserRepositoy{pool: pool}
+func NewUserRepository(pool *postgres.Pool) *UserRepository {
+	return &UserRepository{pool: pool}
 }
 
-func (r *UserRepositoy) GetUser(ctx context.Context, userID uuid.UUID) (User, error) {
+func (r *UserRepository) GetUser(ctx context.Context, userID uuid.UUID) (User, error) {
 	ctx, cancel := context.WithTimeout(ctx, r.pool.OpTimeout())
 	defer cancel()
 
@@ -51,11 +51,7 @@ func (r *UserRepositoy) GetUser(ctx context.Context, userID uuid.UUID) (User, er
 	return user, nil
 }
 
-func (r *UserRepositoy) GetUsers(
-	ctx context.Context,
-	username *string,
-	limit, offset *int,
-) ([]User, error) {
+func (r *UserRepository) GetUsers(ctx context.Context, username *string, limit, offset *int) ([]User, error) {
 	ctx, cancel := context.WithTimeout(ctx, r.pool.OpTimeout())
 	defer cancel()
 
@@ -118,7 +114,7 @@ func (r *UserRepositoy) GetUsers(
 	return users, nil
 }
 
-func (r *UserRepositoy) UpdateUser(ctx context.Context, user User) (User, error) {
+func (r *UserRepository) UpdateUser(ctx context.Context, user User) (User, error) {
 	ctx, cancel := context.WithTimeout(ctx, r.pool.OpTimeout())
 	defer cancel()
 
@@ -170,7 +166,7 @@ func (r *UserRepositoy) UpdateUser(ctx context.Context, user User) (User, error)
 	return updated, nil
 }
 
-func (r *UserRepositoy) DeleteUser(ctx context.Context, user User) error {
+func (r *UserRepository) DeleteUser(ctx context.Context, user User) error {
 	ctx, cancel := context.WithTimeout(ctx, r.pool.OpTimeout())
 	defer cancel()
 

@@ -16,11 +16,21 @@ func Auth(jwtService *jwt.TokenManager) server.Middleware {
 
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				http.Error(w, "missing token", http.StatusUnauthorized)
+				http.Error(w, "missing authorization header", http.StatusUnauthorized)
 				return
 			}
 
-			token := strings.TrimPrefix(authHeader, "Bearer ")
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) != 2 || parts[0] != "Bearer" {
+				http.Error(w, "invalid authorization format", http.StatusUnauthorized)
+				return
+			}
+
+			token := strings.TrimSpace(parts[1])
+			if token == "" {
+				http.Error(w, "empty token", http.StatusUnauthorized)
+				return
+			}
 
 			userID, err := jwtService.Parse(token)
 			if err != nil {

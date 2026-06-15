@@ -1,0 +1,738 @@
+basePath: /api/v1
+definitions:
+  github_com_wxvn_golang-messenger_internal_models.SendMessageRequest:
+    properties:
+      chat_id:
+        type: string
+      text:
+        type: string
+      to_user_id:
+        type: string
+    type: object
+  github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
+  internal_auth.SignRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_auth.SignResponse:
+    properties:
+      tokens:
+        $ref: '#/definitions/internal_auth.Tokens'
+      user:
+        $ref: '#/definitions/internal_auth.User'
+    type: object
+  internal_auth.Tokens:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  internal_auth.User:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      username:
+        type: string
+      version:
+        type: integer
+    type: object
+  internal_auth.requestRefreshToken:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  internal_chats.Chat:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      owner_id:
+        type: string
+      type:
+        $ref: '#/definitions/internal_chats.ChatType'
+      version:
+        type: integer
+    type: object
+  internal_chats.ChatType:
+    enum:
+    - private
+    - group
+    type: string
+    x-enum-varnames:
+    - TypePrivate
+    - TypeGroup
+  internal_chats.CreateChatRequest:
+    properties:
+      chat_name:
+        type: string
+      member_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_chats.PatchChat:
+    properties:
+      add_member_ids:
+        items:
+          type: string
+        type: array
+      chat_name:
+        type: string
+      owner_id:
+        type: string
+      remove_member_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_messages.Message:
+    properties:
+      chatID:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: string
+      senderID:
+        type: string
+      text:
+        type: string
+      version:
+        format: int64
+        type: integer
+    type: object
+  internal_messages.PatchMessage:
+    properties:
+      text:
+        type: string
+    type: object
+  internal_users.PatchUser:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_users.User:
+    properties:
+      created_at:
+        type: string
+      deleted_at:
+        type: string
+      id:
+        type: string
+      username:
+        type: string
+      version:
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: Messenger backend
+  title: Messenger API
+  version: "1.0"
+paths:
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revokes refresh token
+      parameters:
+      - description: refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.requestRefreshToken'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Generates new access + refresh tokens
+      parameters:
+      - description: refresh request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.Tokens'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.Tokens'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/signin:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates user and returns tokens
+      parameters:
+      - description: signin request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.SignRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.Tokens'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      summary: Login user
+      tags:
+      - auth
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Creates new account and returns user + tokens
+      parameters:
+      - description: signup request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.SignRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.SignResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      summary: Register new user
+      tags:
+      - auth
+  /chats:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_chats.Chat'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user chats
+      tags:
+      - chats
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: create chat
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_chats.CreateChatRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_chats.Chat'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create group chat
+      tags:
+      - chats
+  /chats/{id}:
+    delete:
+      parameters:
+      - description: Chat ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete chat
+      tags:
+      - chats
+    get:
+      parameters:
+      - description: Chat ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_chats.Chat'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get chat by id
+      tags:
+      - chats
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Chat ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: update chat
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_chats.PatchChat'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_chats.Chat'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update chat group
+      tags:
+      - chats
+  /messages:
+    get:
+      parameters:
+      - description: chat id
+        in: query
+        name: chat_id
+        required: true
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_messages.Message'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get messages by chat
+      tags:
+      - messages
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: send message
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_models.SendMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_messages.Message'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Send message
+      tags:
+      - messages
+  /messages/{id}:
+    delete:
+      parameters:
+      - description: message id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete message
+      tags:
+      - messages
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: message id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: update message
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_messages.PatchMessage'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_messages.Message'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update message
+      tags:
+      - messages
+  /users:
+    get:
+      parameters:
+      - description: filter by username
+        in: query
+        name: username
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_users.User'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - users
+  /users/{id}:
+    get:
+      parameters:
+      - description: user id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_users.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user by id
+      tags:
+      - users
+  /users/me:
+    delete:
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete current user
+      tags:
+      - users
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_users.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - users
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: update user
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_users.PatchUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_users.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update current user
+      tags:
+      - users
+  /ws:
+    get:
+      description: |-
+        Real-time messaging WebSocket connection (upgrade to ws protocol)
+
+        ### How to connect
+        `ws://localhost:8080/api/v1/ws`
+
+        ### Auth
+        Requires `Authorization: Bearer <JWT>` header in the initial handshake.
+
+        ### Data Format
+        **Client → Server (Incoming):**
+        ```json
+        {"type": "message", "chat_id": "uuid", "text": "hello"}
+        ```
+        **Server → Client (Outgoing):**
+        ```json
+        {"type": "message", "chat_id": "uuid", "message_id": "uuid", "text": "hello"}
+        ```
+      produces:
+      - application/json
+      responses:
+        "101":
+          description: Switching Protocols
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: WebSocket connection
+      tags:
+      - ws
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

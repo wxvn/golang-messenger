@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/wxvn/golang-messenger/internal/logger"
 	"github.com/wxvn/golang-messenger/internal/middleware"
 	"github.com/wxvn/golang-messenger/internal/server"
@@ -52,14 +51,27 @@ func NewUsersHandler(service *UserService) *Handler {
 	}
 }
 
+// UpdateMe godoc
+// @Summary Update current user
+// @Tags users
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body PatchUser true "update user"
+// @Success 200 {object} User
+// @Failure 400 {object} server_response.ErrorResponse
+// @Failure 401 {object} server_response.ErrorResponse
+// @Failure 404 {object} server_response.ErrorResponse
+// @Failure 409 {object} server_response.ErrorResponse
+// @Router /users/me [patch]
 func (h *Handler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := logger.FromContext(ctx)
-	rh := server_response.NewHTTPResponseHandler(log, w)
+	rw := server_response.NewHTTPResponseHandler(log, w)
 
 	userID, ok := middleware.UserIDFromContext(ctx)
 	if !ok {
-		rh.ErrorRespone(
+		rw.ErrorResponse(
 			fmt.Errorf("user id not found in context"),
 			"get user id from context",
 		)
@@ -68,27 +80,35 @@ func (h *Handler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 
 	var req PatchUser
 	if err := server_request.DecodeAndValidateRequest(r, &req); err != nil {
-		rh.ErrorRespone(err, "failed to decode")
+		rw.ErrorResponse(err, "failed to decode")
 		return
 	}
 
 	user, err := h.service.UpdateUser(ctx, userID, req)
 	if err != nil {
-		rh.ErrorRespone(err, "update user")
+		rw.ErrorResponse(err, "update user")
 		return
 	}
 
-	rh.JSONResponse(user, http.StatusOK)
+	rw.JSONResponse(user, http.StatusOK)
 }
 
+// DeleteMe godoc
+// @Summary Delete current user
+// @Tags users
+// @Security BearerAuth
+// @Success 204 "No Content"
+// @Failure 401 {object} server_response.ErrorResponse
+// @Failure 404 {object} server_response.ErrorResponse
+// @Router /users/me [delete]
 func (h *Handler) DeleteMe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := logger.FromContext(ctx)
-	rh := server_response.NewHTTPResponseHandler(log, w)
+	rw := server_response.NewHTTPResponseHandler(log, w)
 
 	userID, ok := middleware.UserIDFromContext(ctx)
 	if !ok {
-		rh.ErrorRespone(
+		rw.ErrorResponse(
 			fmt.Errorf("user id not found in context"),
 			"get user id from context",
 		)
@@ -96,21 +116,30 @@ func (h *Handler) DeleteMe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.DeleteUser(ctx, userID); err != nil {
-		rh.ErrorRespone(err, "delete user")
+		rw.ErrorResponse(err, "delete user")
 		return
 	}
 
-	rh.NoContentResponse()
+	rw.NoContentResponse()
 }
 
+// GetMe godoc
+// @Summary Get current user
+// @Tags users
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} User
+// @Failure 401 {object} server_response.ErrorResponse
+// @Failure 404 {object} server_response.ErrorResponse
+// @Router /users/me [get]
 func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := logger.FromContext(ctx)
-	rh := server_response.NewHTTPResponseHandler(log, w)
+	rw := server_response.NewHTTPResponseHandler(log, w)
 
 	userID, ok := middleware.UserIDFromContext(ctx)
 	if !ok {
-		rh.ErrorRespone(
+		rw.ErrorResponse(
 			fmt.Errorf("user id not found in context"),
 			"get user id from context",
 		)
@@ -119,56 +148,74 @@ func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.service.GetUser(ctx, userID)
 	if err != nil {
-		rh.ErrorRespone(err, "get me")
+		rw.ErrorResponse(err, "get me")
 		return
 	}
 
-	rh.JSONResponse(user, http.StatusOK)
+	rw.JSONResponse(user, http.StatusOK)
 }
 
+// GetUser godoc
+// @Summary Get user by id
+// @Tags users
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "user id"
+// @Success 200 {object} User
+// @Failure 400 {object} server_response.ErrorResponse
+// @Failure 401 {object} server_response.ErrorResponse
+// @Failure 404 {object} server_response.ErrorResponse
+// @Router /users/{id} [get]
 func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := logger.FromContext(ctx)
-	rh := server_response.NewHTTPResponseHandler(log, w)
+	rw := server_response.NewHTTPResponseHandler(log, w)
 
-	userIDStr, err := server_request.GetPathValue(r, "id")
+	userID, err := server_request.GetUUIDPathParam(r, "id")
 	if err != nil {
-		rh.ErrorRespone(err, "get path")
+		rw.ErrorResponse(err, "get path")
 		return
 	}
 
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		rh.ErrorRespone(err, "invalid user id")
-		return
-	}
 	user, err := h.service.GetUser(ctx, userID)
 	if err != nil {
-		rh.ErrorRespone(err, "get user")
+		rw.ErrorResponse(err, "get user")
 		return
 	}
 
-	rh.JSONResponse(user, http.StatusOK)
+	rw.JSONResponse(user, http.StatusOK)
 }
 
+// GetUsers godoc
+// @Summary List users
+// @Tags users
+// @Security BearerAuth
+// @Produce json
+// @Param username query string false "filter by username"
+// @Param limit query int false "limit"
+// @Param offset query int false "offset"
+// @Success 200 {array} User
+// @Failure 400 {object} server_response.ErrorResponse
+// @Failure 401 {object} server_response.ErrorResponse
+// @Router /users [get]
 func (h *Handler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := logger.FromContext(ctx)
-	rh := server_response.NewHTTPResponseHandler(log, w)
+	rw := server_response.NewHTTPResponseHandler(log, w)
 
 	username, limit, offset, err := getUsersQueryParams(r)
 	if err != nil {
-		rh.ErrorRespone(err, "failed to get username/limit/offset query params")
+		rw.ErrorResponse(err, "failed to get username/limit/offset query params")
 		return
 	}
 
 	users, err := h.service.GetUsers(ctx, username, limit, offset)
 	if err != nil {
-		rh.ErrorRespone(err, "failed to get users")
+		rw.ErrorResponse(err, "failed to get users")
 		return
 	}
 
-	rh.JSONResponse(users, http.StatusOK)
+	rw.JSONResponse(users, http.StatusOK)
 }
 
 func getUsersQueryParams(r *http.Request) (*string, *int, *int, error) {
