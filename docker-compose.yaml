@@ -12,11 +12,17 @@ services:
             POSTGRES_DB: test
         volumes:
             - messenger-postgres-data:/var/lib/postgresql
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U user -d test"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
 
     migrate:
         image: migrate/migrate
         depends_on:
-            - postgres
+            postgres:
+                condition: service_healthy
         volumes:
             - ./migrations:/migrations
         command:
