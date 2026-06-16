@@ -47,7 +47,7 @@ func loadPostgresConfig() postgres.Config {
 		Port:     mustEnv("DB_PORT"),
 		User:     mustEnv("DB_USER"),
 		Password: mustEnv("DB_PASSWORD"),
-		DB:       mustEnv("DB_DB"),
+		DB:       mustEnv("DB_NAME"),
 
 		Timeout: getEnvDuration("DB_TIMEOUT", "5s"),
 	}
