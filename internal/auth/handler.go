@@ -1,19 +1,21 @@
 package auth
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/wxvn/golang-messenger/internal/logger"
+	"github.com/wxvn/golang-messenger/internal/middleware"
 	"github.com/wxvn/golang-messenger/internal/server"
 	server_request "github.com/wxvn/golang-messenger/internal/server/request"
 	server_response "github.com/wxvn/golang-messenger/internal/server/response"
 )
 
-func (h *Handler) Routes() []server.Route {
+func (h *Handler) Routes(authMW server.Middleware) []server.Route {
 	return []server.Route{
 		{Method: http.MethodPost, Path: "/auth/signup", Handler: h.SignUp},
 		{Method: http.MethodPost, Path: "/auth/signin", Handler: h.SignIn},
-		{Method: http.MethodPost, Path: "/auth/logout", Handler: h.Logout},
+		{Method: http.MethodPost, Path: "/auth/logout", Handler: h.Logout, Middlewares: []server.Middleware{authMW}},
 		{Method: http.MethodPost, Path: "/auth/refresh", Handler: h.Refresh},
 	}
 }
@@ -92,7 +94,6 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 // @Summary Logout user
 // @Description Revokes refresh token
 // @Tags auth
-// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param request body requestRefreshToken true "refresh token"
@@ -105,13 +106,22 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	log := logger.FromContext(ctx)
 	rw := server_response.NewHTTPResponseHandler(log, w)
 
+	userID, ok := middleware.UserIDFromContext(ctx)
+	if !ok {
+		rw.ErrorResponse(
+			fmt.Errorf("user id not found in context"),
+			"get user id from context",
+		)
+		return
+	}
+
 	var req requestRefreshToken
 	if err := server_request.DecodeAndValidateRequest(r, &req); err != nil {
 		rw.ErrorResponse(err, "failed to decode")
 		return
 	}
 
-	if err := h.service.Logout(ctx, req.RefreshToken); err != nil {
+	if err := h.service.Logout(ctx, req.RefreshToken, userID); err != nil {
 		rw.ErrorResponse(err, "failed to logout")
 		return
 	}
@@ -123,7 +133,6 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 // @Summary Refresh access token
 // @Description Generates new access + refresh tokens
 // @Tags auth
-// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param request body Tokens true "refresh request"

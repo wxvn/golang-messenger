@@ -95,7 +95,7 @@ func main() {
 
 	httpServer.RegisterVersion("v1",
 		server.RouteGroup{
-			Routes: authDelivery.Routes(),
+			Routes: authDelivery.Routes(authMW),
 		},
 		server.RouteGroup{
 			Middlewares: []server.Middleware{authMW},

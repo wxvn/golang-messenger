@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/wxvn/golang-messenger/internal/jwt"
 	"github.com/wxvn/golang-messenger/internal/security"
 )
@@ -71,12 +72,12 @@ func (s *Service) SignIn(ctx context.Context, username, password string) (Tokens
 
 }
 
-func (s *Service) Logout(ctx context.Context, refreshToken string) error {
+func (s *Service) Logout(ctx context.Context, refreshToken string, userID uuid.UUID) error {
 	TokenHash := HashRefreshToken(refreshToken)
 
 	revokeAt := time.Now()
 
-	if err := s.repository.RevokeToken(ctx, TokenHash, revokeAt); err != nil {
+	if err := s.repository.RevokeToken(ctx, TokenHash, revokeAt, userID); err != nil {
 		return fmt.Errorf("revoke token from repository: %w", err)
 	}
 	return nil

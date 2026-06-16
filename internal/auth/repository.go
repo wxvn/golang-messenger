@@ -97,7 +97,7 @@ func (r *Repository) SaveRefreshToken(ctx context.Context, userID uuid.UUID, has
 	return nil
 }
 
-func (r *Repository) RevokeToken(ctx context.Context, tokenHash string, revokedAt time.Time) error {
+func (r *Repository) RevokeToken(ctx context.Context, tokenHash string, revokedAt time.Time, userID uuid.UUID) error {
 
 	ctx, cancel := context.WithTimeout(ctx, r.pool.OpTimeout())
 	defer cancel()
@@ -106,6 +106,7 @@ func (r *Repository) RevokeToken(ctx context.Context, tokenHash string, revokedA
 		UPDATE auth.refresh_tokens
 		SET revoked_at = $1
 		WHERE token_hash = $2
+		  AND user_id = $3
 		  AND revoked_at IS NULL
 	`
 
@@ -114,6 +115,7 @@ func (r *Repository) RevokeToken(ctx context.Context, tokenHash string, revokedA
 		query,
 		revokedAt,
 		tokenHash,
+		userID,
 	)
 
 	if err != nil {
