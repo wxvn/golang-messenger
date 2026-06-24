@@ -65,11 +65,6 @@ const docTemplate = `{
         },
         "/auth/refresh": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Generates new access + refresh tokens",
                 "consumes": [
                     "application/json"

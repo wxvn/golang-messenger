@@ -210,8 +210,6 @@ paths:
           description: Unauthorized
           schema:
             $ref: '#/definitions/github_com_wxvn_golang-messenger_internal_server_response.ErrorResponse'
-      security:
-      - BearerAuth: []
       summary: Refresh access token
       tags:
       - auth

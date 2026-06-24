@@ -94,6 +94,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 // @Summary Logout user
 // @Description Revokes refresh token
 // @Tags auth
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param request body requestRefreshToken true "refresh token"
