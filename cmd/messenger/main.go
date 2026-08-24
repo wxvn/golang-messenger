@@ -26,6 +26,7 @@ import (
 	"github.com/wxvn/golang-messenger/internal/messages"
 	"github.com/wxvn/golang-messenger/internal/middleware"
 	"github.com/wxvn/golang-messenger/internal/postgres"
+	redisclient "github.com/wxvn/golang-messenger/internal/redis"
 	"github.com/wxvn/golang-messenger/internal/server"
 	"github.com/wxvn/golang-messenger/internal/swagger"
 	"github.com/wxvn/golang-messenger/internal/users"
@@ -57,6 +58,14 @@ func main() {
 	}
 	defer pool.Close()
 
+	redisClient, err := redisclient.NewClient(ctx, cfg.Redis)
+	if err != nil {
+		slog.Error("redis connection failed", "error", err)
+		os.Exit(1)
+	}
+	defer redisClient.Close()
+	userCache := users.NewRedisUserCache(redisClient)
+
 	hub := ws.NewHub()
 	go hub.Run()
 
@@ -67,7 +76,7 @@ func main() {
 	authDelivery := auth.NewAuthHandler(authService)
 
 	usersRepo := users.NewUserRepository(pool)
-	usersService := users.NewUserService(usersRepo)
+	usersService := users.NewUserService(usersRepo, userCache)
 	usersHandler := users.NewUsersHandler(usersService)
 
 	chatsRepo := chats.NewChatsRepository(pool)
